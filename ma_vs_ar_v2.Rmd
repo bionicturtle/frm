@@ -1,0 +1,186 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Comparing AR(1) versus MA(1)
+
+```{r}
+
+library(tidyverse)
+library(patchwork)
+library(extrafont)
+library(ggfortify)
+library(forecast)
+library(ggthemes)
+library(cowplot)
+
+# set.seed(66)
+set.seed(17)
+
+n <- 200
+
+AR_param_1 = .15
+AR_param_2 = .95
+AR_intercept = 0
+
+MA_mean = 0
+MA_weight_1 = .15
+MA_weight_2 = .95
+
+color1 = "#E69F00"
+color2 = "#56B4E9"
+
+# AR(1) vs MA(1) with low and high parameters
+AR1_low <- arima.sim(model=list(order=c(1,0,0), ar = AR_param_1), n = n, mean = AR_intercept)
+AR1_hi <- arima.sim(model=list(order=c(1,0,0), ar = AR_param_2), n = n, mean = AR_intercept)
+MA1_low <- arima.sim(model=list(order = c(0,0,1), ma = MA_weight_1), n = n, mean = MA_mean)
+MA1_hi <- arima.sim(model=list(order = c(0,0,1), ma = MA_weight_2), n = n, mean = MA_mean)
+
+
+### The next four are the ACF and PACF plots 
+
+### AR1 ACF
+acf_AR1_l <- ggAcf(AR1_low) + theme_bw() +
+  geom_segment(size = 3) +
+  # geom_hline(yintercept = c(ci2, -ci2), color = "darkblue", linetype = "dashed", size = 2 ) +
+  # labs(
+  #  title = "ACF") + 
+  theme(
+    text = element_text(family = "Calibri"),
+    plot.title = element_blank(),
+    axis.title.x = element_blank(),
+    axis.text.y = element_blank(),
+    panel.grid = element_blank(),
+    panel.border = element_blank()
+  )
+
+### AR1 PACF
+pacf_AR1_l <- ggPacf(AR1_low) + theme_bw() + 
+  geom_segment(size = 3) +
+  theme(
+    text = element_text(family = "Calibri"),
+    plot.title = element_blank(),
+    axis.title.x = element_blank(),
+    axis.text.y = element_blank(),
+    panel.grid = element_blank(),
+    panel.border = element_blank()
+  )
+
+### MA1 ACF
+acf_MA1_l <- ggAcf(MA1_low) + theme_bw() +
+  geom_segment(size = 3) +
+  # geom_hline(yintercept = c(ci2, -ci2), color = "darkblue", linetype = "dashed", size = 2 ) +
+  # labs(
+  #  title = "ACF") + 
+  theme(
+    text = element_text(family = "Calibri"),
+    plot.title = element_blank(),
+    axis.title.x = element_blank(),
+    axis.text.y = element_blank(),
+    panel.grid = element_blank(),
+    panel.border = element_blank()
+  )
+
+### MA2 PACF
+pacf_MA1_l <- ggPacf(MA1_low) + theme_bw() + 
+  geom_segment(size = 3) +
+  theme(
+    text = element_text(family = "Calibri"),
+    plot.title = element_blank(),
+    axis.title.x = element_blank(),
+    axis.text.y = element_blank(),
+    panel.grid = element_blank(),
+    panel.border = element_blank()
+  )
+
+
+#### combine high and low params into one AR(1) series
+
+AR1_low_tag <- bind_cols(AR1_low, rep(1, n))
+AR1_hi_tag <- bind_cols(AR1_hi, rep(2, n))
+TS_AR1_tb <- bind_rows(AR1_low_tag, AR1_hi_tag) %>% rowid_to_column() %>% 
+  rename(
+    y = ...1, 
+    grp = ...2
+  ) 
+
+TS_AR1_tb$grp <- as_factor(TS_AR1_tb$grp)
+
+ar_label_title <- bquote("AR(1):" ~ Y[t] == delta + phi ~ Y[t-1] + epsilon[t])
+ar_label1 <- bquote(phi == .(AR_param_1))
+ar_label2 <- bquote(phi == .(AR_param_2))
+
+p1 <- TS_AR1_tb %>% ggplot(aes(x = rowid, y = y, color = grp)) +
+  geom_line(size = 1) + 
+  theme_minimal_hgrid() +
+  labs(title = ar_label_title) + 
+  draw_label(ar_label1, size = 16, x = 100, y = 5.5, color = color1) +
+  draw_label(ar_label2, size = 16, x = 300, y = 5.5, color = color2) +
+  theme(
+    text = element_text(family = "Calibri"),
+    plot.title = element_text(size = 12),
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.line.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    legend.position = "none"
+  ) + coord_cartesian(
+    ylim = c(-7,7)
+  ) + scale_color_manual(
+    values = c(color1, color2)
+  )
+
+#### combine high and low params into one MA(1) series
+
+MA1_low_tag <- bind_cols(MA1_low, rep(1, n))
+MA1_hi_tag <- bind_cols(MA1_hi, rep(2, n))
+TS_MA1_tb <- bind_rows(MA1_low_tag, MA1_hi_tag) %>% rowid_to_column() %>% 
+  rename(
+    y = ...1, 
+    grp = ...2
+  ) 
+
+TS_MA1_tb$grp <- as_factor(TS_MA1_tb$grp)
+
+ma_label_title <- bquote("MA(1):" ~ Y[t] == mu + theta ~ epsilon[t-1] + epsilon[t])
+ma_label1 <- bquote(theta == .(MA_weight_1))
+ma_label2 <- bquote(theta == .(MA_weight_2))
+label3 <- "Can we even perceive when the MA(1) weight abruptly increases?"
+
+p2 <- TS_MA1_tb %>% ggplot(aes(x = rowid, y = y, color = grp)) +
+  geom_line(size = 1) + 
+  theme_minimal_hgrid() +
+  labs(title = ma_label_title) + 
+  draw_label(ma_label1, fontface ="bold", size = 16, x = 100, y = 5.5, color = color1) +
+  draw_label(ma_label2, size = 16, x = 300, y = 5.5, color = color2) +
+  draw_label(label3, fontface = "italic", size = 9, x = 200, y = -5.5) +
+  theme(
+    text = element_text(family = "Calibri"),
+    plot.title = element_text(size = 12, face = "bold"),
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank(),
+    legend.position = "none"
+  ) + coord_cartesian(
+    ylim = c(-7,7)
+  ) + scale_color_manual(
+    values = c(color1, color2)
+  )
+  
+layout <- c(
+  area(1,1),
+  area(2,1),
+  area(3,1),
+  area(4,1),
+  area(1,2,2,3),
+  area(3,2,4,3)
+)
+
+# patchwork with ease!
+acf_AR1_l + pacf_AR1_l + acf_MA1_l + pacf_MA1_l + p1 + p2 + 
+  plot_layout(design = layout)
+
+
+```
+
