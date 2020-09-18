@@ -1,0 +1,324 @@
+---
+title: 'BT Question Set P1-T2-20-18: Multivariate regressions'
+author: David Harper
+date: '2020-09-17'
+slug: bt-question-set-p1-t2-20-18-multivariate-regressions
+categories:
+  - R
+tags: []
+subtitle: ''
+summary: ''
+authors: []
+lastmod: '2020-09-17T17:10:19-07:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+---
+
+## Multiple regression
+
+
+### Question 1: Fama-french
+
+```{r warning=FALSE, message=FALSE}
+
+library(tidyverse)
+library(broom)
+library(gt)
+
+intercept <- .03
+intercept_sig <- .01
+
+x1_mu <- .04
+x1_sig <- .01
+x1_beta <- 0.4
+
+x2_mu <- .03
+x2_sig <- .01
+x2_beta <- -0.6
+
+x3_mu <- .03
+x3_sig <- .01
+x3_beta <- -0.3
+
+noise_mu <- 0
+noise_sig <- 0 # low value gets low p-value b/c low noise
+
+size <- 96
+set.seed(18)
+
+results <- tibble(
+  x0 = rnorm(size, intercept, intercept_sig),
+  x1 = rnorm(size, x1_mu, x1_sig),
+  x2 = rnorm(size, x2_mu, x2_sig),
+  x3 = rnorm(size, x3_mu, x3_sig),
+  x1_b = rep(x1_beta, size),
+  x2_b = rep(x2_beta, size),
+  x3_b = rep(x3_beta, size),
+  noise = rnorm(size, 0, noise_sig)
+)
+
+
+results1 <- results %>% mutate(
+  y = x0 +x1_b * x1 + x2_b * x2 + x3_b * x3 + noise
+)
+
+model <- lm(y ~ x1 + x2 + x3, data = results1)
+summary(model)
+
+model_tidy <- tidy(model)
+model_tidy[2,1] <- "MKT"
+model_tidy[3,1] <- "SMB"
+model_tidy[4,1] <- "HML"
+
+gt_table_model <- gt(model_tidy)
+
+gt_table_model <- 
+  gt_table_model %>% 
+  tab_options(
+    table.font.size = 14
+  ) %>% 
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body()
+  ) %>% 
+  tab_header(
+    title = "Portfolio excess returns regressed against MKT + SMB + HML",
+    subtitle ="i.e., Fama-French three-factor model"
+  #) %>% tab_source_note(
+  #   source_note = md("the source is ... FRED")
+  ) %>% cols_label(
+    term = "Coefficient",
+    estimate = "Estimate",
+    std.error = "Std Error",
+    statistic = "t-stat",
+    p.value = "p value"
+  ) %>% fmt_number(
+    columns = vars(estimate, std.error, statistic, p.value),
+    decimals = 3
+  ) %>% fmt_scientific(
+    columns = vars(statistic, p.value),
+  ) %>% tab_options(
+    heading.title.font.size = 14,
+    heading.subtitle.font.size = 12
+  )
+
+gt_table_model
+
+```
+
+### Question 2: House Prices
+
+```{r warning=FALSE, message=FALSE}
+
+library(tidyverse)
+library(broom)
+library(gt)
+
+intercept <- 40
+intercept_sig <- .01
+
+x1_mu <- 1200
+x1_sig <- 30
+x1_beta <- 0.35
+
+x2_mu <- 4.5
+x2_sig <- 2
+x2_beta <- 10.0
+
+x3_mu <- 15
+x3_sig <- 4
+x3_beta <- -8.0
+
+noise_mu <- 0
+noise_sig <- 20 # low value gets low p-value b/c low noise
+
+size <- 96
+set.seed(43)
+
+results <- tibble(
+  x0 = rnorm(size, intercept, intercept_sig),
+  x1 = rnorm(size, x1_mu, x1_sig),
+  x2 = rnorm(size, x2_mu, x2_sig),
+  x3 = rnorm(size, x3_mu, x3_sig),
+  x1_b = rep(x1_beta, size),
+  x2_b = rep(x2_beta, size),
+  x3_b = rep(x3_beta, size),
+  noise = rnorm(size, 0, noise_sig)
+)
+
+
+results1 <- results %>% mutate(
+  y = x0 +x1_b * x1 + x2_b * x2 + x3_b * x3 + noise
+)
+
+model <- lm(y ~ x1 + x2 + x3, data = results1)
+summary(model)
+
+model_tidy <- tidy(model)
+model_tidy[2,1] <- "SQFEET"
+model_tidy[3,1] <- "ROOMS"
+model_tidy[4,1] <- "AGE"
+
+gt_table_model <- gt(model_tidy)
+
+gt_table_model <- 
+  gt_table_model %>% 
+  tab_options(
+    table.font.size = 14
+  ) %>% 
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body()
+  ) %>% 
+  tab_header(
+    title = "House Price regressed against ft^2 (SQFEET) + ROOMS(#) + AGE(years)",
+    subtitle = md("House Price in Thousands **($000)** of dollars")
+  #) %>% tab_source_note(
+  #   source_note = md("the source is ... FRED")
+  ) %>% cols_label(
+    term = "Coefficient",
+    estimate = "Estimate",
+    std.error = "Std Error",
+    statistic = "t-stat",
+    p.value = "p value"
+  ) %>% fmt_number(
+    columns = vars(estimate, std.error, statistic, p.value),
+    decimals = 3
+  ) %>% fmt_scientific(
+    columns = vars(p.value),
+  ) %>% tab_options(
+    heading.title.font.size = 14,
+    heading.subtitle.font.size = 12
+  )
+
+gt_table_model
+
+mean(results1$y) # price
+mean(results1$x0) # intercept
+mean(results1$x1) # sqfeet
+mean(results1$x2) # rooms
+mean(results1$x3) # age
+
+
+```
+
+### Question 3: Insurance
+
+```{r warning=FALSE, message=FALSE}
+
+library(tidyverse)
+library(broom)
+library(gt)
+
+intercept <- 150
+intercept_sig <- 40
+
+# age
+x1_mu <- 38
+x1_sig <- 7
+x1_beta <- 50
+
+# bmi
+x2_mu <- 22
+x2_sig <- 4
+x2_beta <- 100
+
+# smoker
+x3_mu <- 15
+x3_sig <- 0.5
+x3_beta <- 535
+
+# spend
+x4_mu <- 500
+x4_sig <- 250
+x4_beta <- -0.4
+
+
+noise_mu <- 0
+noise_sig <- 300 # low value gets low p-value b/c low noise
+
+size <- 43
+set.seed(12)
+
+results <- tibble(
+  x0 = rnorm(size, intercept, intercept_sig),
+  x1 = round(rnorm(size, x1_mu, x1_sig)),
+  x2 = rnorm(size, x2_mu, x2_sig),
+  x3 = round(runif(size)-.35), # smoker = 1, non = 0
+  x4 = rnorm(size, x4_mu, x4_sig),
+  x1_b = rep(x1_beta, size),
+  x2_b = rep(x2_beta, size),
+  x3_b = rep(x3_beta, size),
+  x4_b = rep(x4_beta, size),
+  noise = rnorm(size, 0, noise_sig)
+)
+
+
+results1 <- results %>% mutate(
+  y = x0 +x1_b * x1 + x2_b * x2 + x3_b * x3 + x4_b * x4 + noise
+)
+
+model <- lm(y ~ x1 + x2 + x3 + x4, data = results1)
+summary(model)
+
+model_tidy <- tidy(model)
+model_tidy[2,1] <- "AGE"
+model_tidy[3,1] <- "BMI"
+model_tidy[4,1] <- "SMOKER"
+model_tidy[5,1] <- "CHARITY"
+
+gt_table_model <- gt(model_tidy)
+
+gt_table_model <- 
+  gt_table_model %>% 
+  tab_options(
+    table.font.size = 14
+  ) %>% 
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body()
+  ) %>% 
+  tab_header(
+    title = "Medical COST regressed against AGE + BMI + SMOKER(1/0) + CHARITY($)",
+    subtitle = md("Simulated dataset")
+  ) %>% tab_source_note(
+    source_note = md("Residual standard error: 295.2 on 38 degrees of freedom")
+  ) %>% tab_source_note(
+    source_note = md("Multiple R-squared:  0.8343,	Adjusted R-squared:  0.8168")
+  ) %>% tab_source_note(
+    source_note = md("F-statistic: 47.82 on 4 and 38 DF,  p-value: 2.486e-14")
+  ) %>% cols_label(
+    term = "Coefficient",
+    estimate = "Estimate",
+    std.error = "Std Error",
+    statistic = "t-stat",
+    p.value = "p value"
+  ) %>% fmt_number(
+    columns = vars(estimate, std.error, statistic, p.value),
+    decimals = 2
+  ) %>% fmt_scientific(
+    columns = vars(p.value),
+  ) %>% tab_options(
+    heading.title.font.size = 14,
+    heading.subtitle.font.size = 12
+  )
+
+
+gt_table_model
+
+mean(results1$y) # cost
+mean(results1$x0) # intercept
+mean(results1$x1) # age
+mean(results1$x2) # bmi
+mean(results1$x3) # smoker
+mean(results1$x4) # charity
+
+
+
+```
+
+
