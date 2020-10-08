@@ -1,0 +1,52 @@
+---
+title: 'BT Question Set P1-T2-20-21-2: Autocorrelation function (ACF)'
+author: David
+date: '2020-09-30'
+slug: bt-question-set-p1-t2-20-21-2-autocorrelation-function-acf
+categories:
+  - R
+tags: []
+subtitle: ''
+summary: ''
+authors: []
+lastmod: '2020-09-30T19:00:39-07:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+---
+
+
+20.21.2. Shown below is the autocorrelation function (ACF) for a time series object that contains the total quarterly beer production in Australia (in megalitres) from 1956:Q1 to 2010:Q2 (source: https://cran.r-project.org/web/packages/fpp2/index.html).
+
+```{r}
+
+library(forecast)
+# install.packages("fpp2")
+library(fpp2)
+beer2 <- ausbeer
+beer2 <- window(ausbeer, start=1992)
+
+acf_beer2 <- ggAcf(beer2) + 
+  xlab("Lags") + 
+  theme_bw() +
+  geom_segment(size = 3) +
+  theme(
+    text = element_text(family = "Calibri"),
+    plot.title = element_blank(),
+    axis.title.x = element_text(size = 14, face = "bold"),
+    axis.title.y = element_text(size = 14, face = "bold"),
+    axis.text.x = element_text(size = 14, face = "bold"),
+    axis.text.y = element_text(size = 14, face= "bold"),
+    panel.grid.major.x = element_blank(),
+    panel.grid.major.y = element_line(color="grey"),
+    panel.border = element_blank()
+  )
+
+acf_beer2
+
+
+```
+
