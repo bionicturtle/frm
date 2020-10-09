@@ -1,0 +1,72 @@
+---
+title: 'BT Question Set P1-T2-20-22-2: AR versus MA process'
+author: David Harper
+date: '2020-10-08'
+slug: bt-question-set-p1-t2-20-22-2-ar-versus-ma-process
+categories:
+  - R
+tags: []
+subtitle: ''
+summary: ''
+authors: []
+lastmod: '2020-10-08T19:27:33-07:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+---
+
+## P1.T2.20.22. Stationary Time Series: autoregressive (AR) and moving average (MA) processes
+
+### Learning objectives
+
+* Define and describe the properties of autoregressive (AR) processes. 
+* Define and describe the properties of moving average (MA) processes. 
+* Explain how a lag operator works.
+
+```{r}
+library(tidyverse)
+
+set.seed(25)
+
+MA_mean = 2.0
+MA_weight = 0.5
+# Generate an MA(1) with mean, μ = 2.0 and weight parameter 𝜃= 0.5
+MA <- arima.sim(model=list(order = c(0,0,1), ma = MA_weight), n = 200, mean = MA_mean)
+
+AR_intercept = 3.0
+AR_param = 0.6
+# Generate an AR(1) with intercept δ = 3.0 and AR parameter ϕ = 0.6 
+AR <- arima.sim(model=list(order=c(1,0,0), ar = AR_param), n = 200, mean = AR_intercept)
+
+color_AR = "#266935"
+color_MA = "darkblue"
+
+time_ma_ar <- bind_cols(MA, AR) %>% rowid_to_column() %>% 
+  rename(y_MA = ...1, y_AR = ...2)
+time_ma_ar %>% ggplot(aes(x = rowid)) + 
+  theme_bw() + 
+  theme(
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank(),
+    axis.text = element_text(size = 14, face = "bold"),
+    legend.position = c(0.8, 0.86)
+  ) + 
+  ggtitle("AR(1) series in GREEN. MA(1) series in BLUE.") + 
+  geom_line(aes(y = y_AR), color = color_AR, size = 1) +
+  geom_line(aes(y = y_MA), color = color_MA, size = 1) +
+  scale_y_continuous(breaks = c(0, 2.5, 5.0, 7.5, 10, 12.5))
+  # scale_color_manual(name = "Simulations with arima.sim()", labels=c("MA(1)", "AR(1)"))
+
+# MA mean is intercept
+lr_mean_AR <- AR_intercept/(1 - AR_param)
+variance_MA <- (1 + MA_weight^2)*1
+variance_AR <- 1/(1 - AR_param^2)
+
+lr_mean_AR
+variance_MA
+variance_AR
+
+```
