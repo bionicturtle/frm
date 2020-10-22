@@ -1,0 +1,112 @@
+---
+title: 'BT Question Set P1-T2-20-24-3: AIC and BIC'
+author: "David Harper"
+date: '2020-10-21'
+slug: bt-question-set-p1-t2-20-24-3-aic-and-bic
+categories: []
+tags: R
+subtitle: ''
+summary: ''
+authors: []
+lastmod: '2020-10-21T20:25:01-07:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+---
+
+20.24.3. Eric is a commodity analyst who fit four different candidate AR(p) models to a series of oil prices. For each of the candidate models, he then retrieved the Akaike information criterion (AIC) and the Bayesian information criterion (BIC). The results are displayed below.
+
+.. AIC and BIC values (table below) goes here ...
+
+As Eric interprets the results of these criteria (i.e., the AIC and BIC values), which of the following statements is TRUE?
+
+a. Both criteria (AIC and BIC) favor the AR(1) model
+b. Both criteria (AIC and BIC) favor the AR(2) model
+c. As both criteria are insignificant, any AR(p) model is a bad fit
+d. The criteria disagree and therefore the AIC's preference should prevail because it prefers fewer lags
+
+```{r message=FALSE}
+
+library(tidyverse)
+library(scales)
+library(gridExtra)
+library(forecast)
+library(tseries)
+library(fpp2)
+library(gt)
+library(astsa)
+
+# 175
+set.seed(175)
+ar2 <- arima.sim(model=list(order=c(2,0,0),ar = c(1.5,-.75)),n = 500)
+ma2 <- arima.sim(model=list(order=c(0,0,2),ma = c(1.5,-.75)),n = 500)
+
+ar1_fit <- sarima(ar2, p = 1, d = 0, q = 0)
+ar2_fit <- sarima(ar2, p = 2, d = 0, q = 0)
+ar3_fit <- sarima(ar2, p = 3, d = 0, q = 0)
+ar4_fit <- sarima(ar2, p = 4, d = 0, q = 0)
+
+ma1_fit <- sarima(ma2, p = 0, d = 0, q = 1)
+ma2_fit <- sarima(ma2, p = 0, d = 0, q = 2)
+ma3_fit <- sarima(ma2, p = 0, d = 0, q = 3)
+ma4_fit <- sarima(ma2, p = 0, d = 0, q = 4)
+
+print("AIC")
+ar1_fit$AIC
+ar2_fit$AIC
+ar3_fit$AIC
+ar4_fit$AIC
+print("BIC")
+ar1_fit$BIC
+ar2_fit$BIC
+ar3_fit$BIC
+ar4_fit$BIC
+
+AIC_ar2 <- c(ar1_fit$AIC, ar2_fit$AIC, ar3_fit$AIC, ar4_fit$AIC)
+BIC_ar2 <- c(ar1_fit$BIC, ar2_fit$BIC, ar3_fit$BIC, ar4_fit$BIC)
+AIC_BIC_ar2 <- cbind(AIC_ar2, BIC_ar2) %>% data.frame()
+models <- c("AR(1)", "AR(2)", "AR(3)", "AR(4)")
+models_AIC_BIC <- cbind(models, AIC_BIC_ar2)
+
+models_AIC_BIC_gt <- gt(models_AIC_BIC)
+
+models_AIC_BIC_gt <- 
+  models_AIC_BIC_gt %>% 
+  tab_options(
+    table.font.size = 14
+  ) %>% tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body()
+  # ) %>% tab_style(
+  #  style = cell_text(color = "cadetblue"),
+  #  locations = cells_column_labels(
+  #    columns = vars(model, 'h (lags)', statistic, 'p-value')
+  #  )
+  ) %>% tab_header(
+    title = md("**AIC and BIC values**"),
+    subtitle = "Four candidate models: AR(1) ... AR(4)"
+  ) %>% fmt_number(
+    columns = vars(AIC_ar2, BIC_ar2),
+    decimals = 5
+  ) %>% tab_source_note(
+    source_note = md("AIC = Akaike information criterion")
+  ) %>% tab_source_note(
+    source_note = md("BIC = Bayesian information criterion")
+  # ) %>% cols_width(
+  #  vars(model) ~ px(70),
+  #  vars(statistic, 'p-value') ~ px(90)
+  ) %>% cols_label (
+    models = md("**model**"),
+    AIC_ar2 = md("**AIC**"),
+    BIC_ar2 = md("**BIC**")
+  ) %>% tab_options(
+    heading.title.font.size = 16,
+    heading.subtitle.font.size = 14
+  )
+
+models_AIC_BIC_gt
+
+```
