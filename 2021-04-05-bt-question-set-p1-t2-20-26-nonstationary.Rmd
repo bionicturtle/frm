@@ -1,0 +1,58 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+20.26.1. 
+
+```{r}
+set.seed(24)
+
+WN <- arima.sim(model = list(order = c(0,0,0)), n = 100)
+plot.ts(WN)
+
+alpha = 2.5
+beta = 0.5
+
+time <- seq(from = 1, to = 100)
+
+Y <- alpha + beta * time + WN
+plot.ts(Y)
+
+table <- data.frame(time, WN, Y)
+
+Y_diff <- diff(Y)
+plot.ts(Y_diff)
+
+Box.test(Y_diff, type = "Ljung")
+Box.test(WN, type = "Ljung")
+
+```
+
+20.26.2
+
+
+20.26.3 
+```{r}
+
+set.seed(123)
+
+sim_1 <- arima.sim(n = 100, 
+          model = list(order = c(2, 0, 0),
+                       ar = c(1.8, -0.9))
+          )
+
+plot.ts(sim_1)
+
+sim_2 <- arima.sim(n = 100, 
+          model = list(order = c(2, 0, 0),
+                       ar = c(1.8, -0.8))
+          )
+
+plot.ts(sim_1)
+plot.ts(sim_2)
+
+
+```
+
+
